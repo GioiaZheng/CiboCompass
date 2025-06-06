@@ -17,7 +17,6 @@ func (app *application) routes() *httprouter.Router {
 	router.HandlerFunc(http.MethodGet,"/v1/healthcheck", app.healthcheckHandler)
 	router.HandlerFunc(http.MethodGet,"/v1/dishes/:dishName", app.dishdetailsHandler)
 	router.HandlerFunc(http.MethodPost,"/v1/dishes/:dishName/feedback", app.dishfeedbackHandler)
-	router.HandlerFunc(http.MethodPost,"/v1/dishes/:dishName/comment", app.dishcommentHandler)
 	
 	return router
 }

@@ -30,7 +30,8 @@ func InitDatabase(db *sql.DB) error {
 	query := `
 	CREATE TABLE IF NOT EXISTS Dishes (
 	name TEXT NOT NULL PRIMARY KEY,
-	img TEXT
+	img TEXT,
+	description TEXT
 	);
 
 	CREATE TABLE IF NOT EXISTS Ingredients (
@@ -51,12 +52,6 @@ func InitDatabase(db *sql.DB) error {
 	nationality TEXT NOT NULL,
 	like REAL DEFAULT 0,
 	dislike REAL DEFAULT 0
-	);
-
-	CREATE TABLE IF NOT EXISTS Comments (
-	dishName TEXT NOT NULL,
-	comment TEXT NOT NULL,
-	FOREIGN KEY (dishName) REFERENCES Dishes(name)
 	);
 	`
 	_, err := db.Exec(query)
