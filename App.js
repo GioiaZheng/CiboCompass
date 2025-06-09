@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     StyleSheet, Text, View, TextInput, TouchableOpacity, Image, ScrollView,
     ActivityIndicator, Alert, SafeAreaView, Platform, StatusBar, Modal, Keyboard
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE_URL = 'http://172.20.10.5:4000/v1';
+const API_BASE_URL = 'http://192.168.1.55:4000/v1';
 // change 'http://YOUROWNIPADDRESS:4000/v1' as needed
 const NATIONALITIES = [
     { name: 'Italy', flag: '🇮🇹' },
@@ -48,7 +48,11 @@ export default function App() {
     const [userRating, setUserRating] = useState(0);
     const [ratingCountry, setRatingCountry] = useState('Italy');
     const [ratingCountryModal, setRatingCountryModal] = useState(false);
-    const [ingredientsExpanded, setIngredientsExpanded] = useState(false); // Add this state
+    const [ingredientsExpanded, setIngredientsExpanded] = useState(false);
+    
+    // Add scroll position tracking
+    const scrollViewRef = useRef(null);
+    const [scrollPosition, setScrollPosition] = useState(0);
 
     // On mount, clear nationality and load Pizza Margherita with Italian rating
     useEffect(() => {
@@ -74,7 +78,7 @@ export default function App() {
             setLoading(false);
         }
     };
-// test
+
     const saveNationality = async name => {
         const n = getNation(name);
         await AsyncStorage.setItem('userNationality', n.name);
@@ -115,6 +119,10 @@ export default function App() {
             if (res.ok) {
                 const data = await res.json();
                 setDish(data.data);
+                // Restore scroll position after data loads
+                setTimeout(() => {
+                    scrollViewRef.current?.scrollTo({ y: scrollPosition, animated: false });
+                }, 100);
             }
         } catch {
             // Handle error silently
@@ -274,7 +282,15 @@ export default function App() {
             </Modal>
 
             {/* Main Content */}
-            <ScrollView style={styles.content} keyboardShouldPersistTaps="handled">
+            <ScrollView 
+                ref={scrollViewRef}
+                style={styles.content} 
+                keyboardShouldPersistTaps="handled"
+                onScroll={(event) => {
+                    setScrollPosition(event.nativeEvent.contentOffset.y);
+                }}
+                scrollEventThrottle={16}
+            >
                 {loading && (
                     <View style={styles.loadingContainer}>
                         <ActivityIndicator size="large" color="#FF8C42" />
