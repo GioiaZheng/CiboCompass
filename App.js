@@ -6,6 +6,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_BASE_URL = 'http://172.20.10.5:4000/v1';
+// change 'http://YOUROWNIPADDRESS:4000/v1' as needed
 const NATIONALITIES = [
     { name: 'Italy', flag: '🇮🇹' },
     { name: 'France', flag: '🇫🇷' },
