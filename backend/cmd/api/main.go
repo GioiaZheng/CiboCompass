@@ -55,7 +55,7 @@ func main(){
 	}
 
 	srv := &http.Server{
-		Addr: fmt.Sprintf(":%d", cfg.port),
+		Addr: fmt.Sprintf("0.0.0.0:%d", cfg.port),
 		Handler: app.routes(),
 		IdleTimeout: time.Minute,
 		ReadTimeout: 10 * time.Second,
