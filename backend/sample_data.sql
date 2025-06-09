@@ -8,41 +8,31 @@ DELETE FROM Dishes;
 INSERT INTO Dishes (name, img, description) VALUES (
   'Pizza Margherita',
   'https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-  'Pizza Margherita is a classic Neapolitan pizza topped with tomato sauce, mozzarella cheese, and fresh basil leaves.
-It is celebrated for its simplicity and fresh ingredients.
-A true symbol of Italian culinary tradition.'
+  'Pizza Margherita is a classic Neapolitan pizza topped with tomato sauce, mozzarella cheese, and fresh basil leaves. It is celebrated for its simplicity and fresh ingredients. A true symbol of Italian culinary tradition.'
 );
 
 INSERT INTO Dishes (name, img, description) VALUES (
   'Chicken Curry',
   'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?q=80&w=3113&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-  'Chicken Curry is a flavorful dish made with tender chicken pieces simmered in a spiced curry sauce.
-It is enjoyed across many cultures, especially in South Asia.
-The rich sauce is often served with rice or bread.'
+  'Chicken Curry is a flavorful dish made with tender chicken pieces simmered in a spiced curry sauce. It is enjoyed across many cultures, especially in South Asia. The rich sauce is often served with rice or bread.'
 );
 
 INSERT INTO Dishes (name, img, description) VALUES (
   'Spaghetti Carbonara',
   'https://images.unsplash.com/photo-1588013273468-315fd88ea34c?q=80&w=2938&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-  'Spaghetti Carbonara is a Roman pasta dish made with eggs, cheese, pancetta, and black pepper.
-It is creamy and savory, with a rich, comforting flavor.
-A beloved staple of Italian cuisine.'
+  'Spaghetti Carbonara is a Roman pasta dish made with eggs, cheese, pancetta, and black pepper. It is creamy and savory, with a rich, comforting flavor. A beloved staple of Italian cuisine.'
 );
 
 INSERT INTO Dishes (name, img, description) VALUES (
   'Beef Steak',
   'https://images.unsplash.com/photo-1600891964092-4316c288032e?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-  'Beef Steak is a juicy cut of beef, grilled or pan-seared to perfection.
-It is often seasoned simply with salt and pepper.
-Served with sides like potatoes or vegetables, it is a favorite worldwide.'
+  'Beef Steak is a juicy cut of beef, grilled or pan-seared to perfection. It is often seasoned simply with salt and pepper. Served with sides like potatoes or vegetables, it is a favorite worldwide.'
 );
 
 INSERT INTO Dishes (name, img, description) VALUES (
   'Salmon Sushi',
   'https://images.unsplash.com/photo-1558985212-92c2ff0b56e7?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-  'Salmon Sushi features slices of fresh salmon atop vinegared rice, sometimes wrapped in seaweed.
-It is a staple of Japanese cuisine, prized for its delicate flavor and texture.
-Often enjoyed with soy sauce, wasabi, and pickled ginger.'
+  'Salmon Sushi features slices of fresh salmon atop vinegared rice, sometimes wrapped in seaweed. It is a staple of Japanese cuisine, prized for its delicate flavor and texture. Often enjoyed with soy sauce, wasabi, and pickled ginger.'
 );
 
 -- Add ingredients
