@@ -49,6 +49,7 @@ export default function App() {
     const [ratingCountry, setRatingCountry] = useState('Italy');
     const [ratingCountryModal, setRatingCountryModal] = useState(false);
     const [ingredientsExpanded, setIngredientsExpanded] = useState(false);
+    const [submittingRating, setSubmittingRating] = useState(false);
     
     // Add scroll position tracking
     const scrollViewRef = useRef(null);
@@ -59,6 +60,16 @@ export default function App() {
         AsyncStorage.removeItem('userNationality').then(() => setNationality(''));
         fetchDefaultDish();
     }, []);
+
+    // Reset user rating when nationality changes
+    useEffect(() => {
+        setUserRating(0);
+    }, [nationality]);
+
+    // Reset user rating when dish changes
+    useEffect(() => {
+        setUserRating(0);
+    }, [dish?.name]);
 
     const fetchDefaultDish = async () => {
         setLoading(true);
@@ -84,6 +95,7 @@ export default function App() {
         await AsyncStorage.setItem('userNationality', n.name);
         setNationality(n.name);
         setModalVisible(false);
+        // Rating will be reset by useEffect
     };
 
     const searchDish = async (query) => {
@@ -98,6 +110,7 @@ export default function App() {
             if (res.ok) {
                 const data = await res.json();
                 setDish(data.data);
+                // Rating will be reset by useEffect when dish changes
             } else {
                 setDish(null);
                 Alert.alert('Not Found', 'Dish not found. Please try another name.');
@@ -148,6 +161,51 @@ export default function App() {
         }
     };
 
+    const submitRating = async (rating) => {
+        if (!dish || !nationality || !rating || submittingRating) return;
+        
+        setSubmittingRating(true);
+        try {
+            // Convert star rating to like/dislike feedback
+            const feedback = rating >= 3 ? 'like' : 'dislike';
+            
+            const res = await fetch(`${API_BASE_URL}/dishes/${dish.name}/feedback`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'X-User-Nationality': nationality 
+                },
+                body: JSON.stringify({ feedback }),
+            });
+            
+            if (res.ok) {
+                // Update the dish data in place without scrolling
+                setDish(prevDish => ({
+                    ...prevDish,
+                    like: feedback === 'like' ? prevDish.like + 1 : prevDish.like,
+                    dislike: feedback === 'dislike' ? prevDish.dislike + 1 : prevDish.dislike
+                }));
+                
+                // Keep the user's rating visible
+                setUserRating(rating);
+            } else {
+                Alert.alert('Error', 'Failed to submit rating. Please try again.');
+            }
+        } catch (error) {
+            Alert.alert('Error', 'Failed to submit rating. Please try again.');
+        } finally {
+            setSubmittingRating(false);
+        }
+    };
+
+    const handleRatingPress = (rating) => {
+        setUserRating(rating);
+        // Auto-submit the rating after a short delay to allow user to see their selection
+        setTimeout(() => {
+            submitRating(rating);
+        }, 500);
+    };
+
     const getRatingPercentage = () => {
         if (!dish || (dish.like === 0 && dish.dislike === 0)) return null;
         const total = dish.like + dish.dislike;
@@ -168,16 +226,46 @@ export default function App() {
         if (!dish) return [];
         const specs = [];
         
-        // Check if vegetarian (simplified logic - you might need to adjust based on your data)
-        const isVegetarian = !dish.ingredients.some(ingredient => 
-            ingredient.name.toLowerCase().includes('meat') || 
-            ingredient.name.toLowerCase().includes('chicken') || 
-            ingredient.name.toLowerCase().includes('beef') ||
-            ingredient.name.toLowerCase().includes('pork') ||
-            ingredient.name.toLowerCase().includes('fish')
+        // Comprehensive list of non-vegetarian ingredients
+        const nonVegetarianIngredients = [
+            // Meat
+            'meat', 'beef', 'pork', 'lamb', 'veal', 'venison', 'mutton',
+            'chicken', 'turkey', 'duck', 'goose', 'poultry',
+            'bacon', 'ham', 'prosciutto', 'pancetta', 'sausage', 'pepperoni',
+            'salami', 'chorizo', 'mortadella', 'bresaola',
+            
+            // Seafood
+            'fish', 'salmon', 'tuna', 'cod', 'halibut', 'bass', 'trout',
+            'sardine', 'anchovy', 'mackerel', 'herring', 'sole', 'flounder',
+            'shrimp', 'prawn', 'lobster', 'crab', 'scallop', 'mussel',
+            'clam', 'oyster', 'squid', 'octopus', 'calamari',
+            'seafood', 'shellfish',
+            
+            // Other animal products that make food non-vegetarian
+            'gelatin', 'lard', 'suet', 'tallow',
+            
+            // Specific dish names that contain meat/fish
+            'carbonara', // typically contains pancetta/bacon
+            'bolognese', // contains meat sauce
+            'amatriciana', // contains pancetta
+        ];
+        
+        // Check if any ingredient contains non-vegetarian items
+        const isVegetarian = !dish.ingredients.some(ingredient => {
+            const ingredientName = ingredient.name.toLowerCase();
+            return nonVegetarianIngredients.some(nonVegItem => 
+                ingredientName.includes(nonVegItem.toLowerCase())
+            );
+        });
+        
+        // Also check the dish name itself for common non-vegetarian dishes
+        const dishName = dish.name.toLowerCase();
+        const isVegetarianByName = !nonVegetarianIngredients.some(nonVegItem => 
+            dishName.includes(nonVegItem.toLowerCase())
         );
         
-        if (isVegetarian) {
+        // Only mark as vegetarian if both ingredient check and name check pass
+        if (isVegetarian && isVegetarianByName) {
             specs.push({ label: 'Vegetarian', icon: '✅' });
         }
         
@@ -374,17 +462,30 @@ export default function App() {
 
                         {/* Your Rating */}
                         <View style={[styles.card, !nationality && styles.disabledCard]}>
-                            <Text style={[styles.cardTitle, !nationality && styles.disabledText]}>
-                                Your rating
-                            </Text>
+                            <View style={styles.cardHeader}>
+                                <Text style={[styles.cardTitle, !nationality && styles.disabledText]}>
+                                    Your rating
+                                </Text>
+                                {submittingRating && (
+                                    <ActivityIndicator size="small" color="#FF8C42" />
+                                )}
+                            </View>
                             <PressableStars 
                                 value={userRating} 
-                                onPress={setUserRating} 
-                                disabled={!nationality}
+                                onPress={handleRatingPress} 
+                                disabled={!nationality || submittingRating}
                             />
-                            {!nationality && (
+                            {!nationality ? (
                                 <Text style={styles.disabledMessage}>
                                     Please choose your nationality to rate
+                                </Text>
+                            ) : userRating > 0 ? (
+                                <Text style={styles.ratingSubmittedMessage}>
+                                    You rated this dish {userRating} star{userRating !== 1 ? 's' : ''}
+                                </Text>
+                            ) : (
+                                <Text style={styles.ratingInstructionMessage}>
+                                    Tap stars to rate this dish
                                 </Text>
                             )}
                         </View>
@@ -611,6 +712,17 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#999',
         fontStyle: 'italic',
+        marginTop: 5,
+    },
+    ratingSubmittedMessage: {
+        fontSize: 14,
+        color: '#4CAF50',
+        fontWeight: '500',
+        marginTop: 5,
+    },
+    ratingInstructionMessage: {
+        fontSize: 14,
+        color: '#666',
         marginTop: 5,
     },
     modalOverlay: {
