@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     StyleSheet, Text, View, TextInput, TouchableOpacity, Image, ScrollView,
     ActivityIndicator, Alert, SafeAreaView, Platform, StatusBar, Modal, Keyboard
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE_URL = 'http://192.168.1.55:4000/v1';
-// change 'http://YOUROWNIPADDRESS:4000/v1' as needed
+const API_BASE_URL = 'http://10.90.224.136:4000/v1';
 const NATIONALITIES = [
     { name: 'Italy', flag: '🇮🇹' },
     { name: 'France', flag: '🇫🇷' },
@@ -49,7 +48,6 @@ export default function App() {
     const [ratingCountry, setRatingCountry] = useState('Italy');
     const [ratingCountryModal, setRatingCountryModal] = useState(false);
     const [ingredientsExpanded, setIngredientsExpanded] = useState(false);
-    const [submittingRating, setSubmittingRating] = useState(false);
     
     // Add scroll position tracking
     const scrollViewRef = useRef(null);
@@ -94,23 +92,23 @@ export default function App() {
         const n = getNation(name);
         await AsyncStorage.setItem('userNationality', n.name);
         setNationality(n.name);
+        setUserRating(0); // reset rating
+        setRatingCountry(n.name); // reset rating context
         setModalVisible(false);
-        // Rating will be reset by useEffect
     };
 
     const searchDish = async (query) => {
         const dishName = query || searchQuery;
         if (!dishName.trim()) return;
         setLoading(true);
-        setIngredientsExpanded(false); // Reset expansion when searching new dish
+        setIngredientsExpanded(false);
         try {
             const res = await fetch(`${API_BASE_URL}/dishes/${dishName}`, {
-                headers: { 'X-User-Nationality': 'Italy' }
+                headers: { 'X-User-Nationality': nationality || 'Italy' }
             });
             if (res.ok) {
                 const data = await res.json();
                 setDish(data.data);
-                // Rating will be reset by useEffect when dish changes
             } else {
                 setDish(null);
                 Alert.alert('Not Found', 'Dish not found. Please try another name.');
@@ -122,6 +120,7 @@ export default function App() {
         }
     };
 
+
     const fetchDishForCountry = async (country) => {
         if (!dish) return;
         setLoading(true);
@@ -132,10 +131,6 @@ export default function App() {
             if (res.ok) {
                 const data = await res.json();
                 setDish(data.data);
-                // Restore scroll position after data loads
-                setTimeout(() => {
-                    scrollViewRef.current?.scrollTo({ y: scrollPosition, animated: false });
-                }, 100);
             }
         } catch {
             // Handle error silently
@@ -226,51 +221,36 @@ export default function App() {
         if (!dish) return [];
         const specs = [];
         
-        // Comprehensive list of non-vegetarian ingredients
-        const nonVegetarianIngredients = [
-            // Meat
-            'meat', 'beef', 'pork', 'lamb', 'veal', 'venison', 'mutton',
-            'chicken', 'turkey', 'duck', 'goose', 'poultry',
-            'bacon', 'ham', 'prosciutto', 'pancetta', 'sausage', 'pepperoni',
-            'salami', 'chorizo', 'mortadella', 'bresaola',
-            
-            // Seafood
-            'fish', 'salmon', 'tuna', 'cod', 'halibut', 'bass', 'trout',
-            'sardine', 'anchovy', 'mackerel', 'herring', 'sole', 'flounder',
-            'shrimp', 'prawn', 'lobster', 'crab', 'scallop', 'mussel',
-            'clam', 'oyster', 'squid', 'octopus', 'calamari',
-            'seafood', 'shellfish',
-            
-            // Other animal products that make food non-vegetarian
-            'gelatin', 'lard', 'suet', 'tallow',
-            
-            // Specific dish names that contain meat/fish
-            'carbonara', // typically contains pancetta/bacon
-            'bolognese', // contains meat sauce
-            'amatriciana', // contains pancetta
-        ];
-        
-        // Check if any ingredient contains non-vegetarian items
-        const isVegetarian = !dish.ingredients.some(ingredient => {
-            const ingredientName = ingredient.name.toLowerCase();
-            return nonVegetarianIngredients.some(nonVegItem => 
-                ingredientName.includes(nonVegItem.toLowerCase())
-            );
-        });
-        
-        // Also check the dish name itself for common non-vegetarian dishes
-        const dishName = dish.name.toLowerCase();
-        const isVegetarianByName = !nonVegetarianIngredients.some(nonVegItem => 
-            dishName.includes(nonVegItem.toLowerCase())
+        // Check if vegetarian (simplified logic - you might need to adjust based on your data)
+        const isVegetarian = !dish.ingredients.some(ingredient => 
+            ingredient.name.toLowerCase().includes('meat') || 
+            ingredient.name.toLowerCase().includes('chicken') || 
+            ingredient.name.toLowerCase().includes('beef') ||
+            ingredient.name.toLowerCase().includes('pork') ||
+            ingredient.name.toLowerCase().includes('fish')
         );
         
-        // Only mark as vegetarian if both ingredient check and name check pass
-        if (isVegetarian && isVegetarianByName) {
+        if (isVegetarian) {
             specs.push({ label: 'Vegetarian', icon: '✅' });
         }
-        
+        if (!includes('pork')) {
+            specs.push({ label: 'No pork', icon: '✅' });
+        }
+        if (!includes('egg')) {
+            specs.push({ label: 'Egg-free', icon: '✅' });
+        }
+        if (!includes('nut') && !includes('almond') && !includes('peanut') && !includes('cashew')) {
+            specs.push({ label: 'Nut-free', icon: '✅' });
+        }
+        if (!includes('fish') && !includes('shrimp') && !includes('crab')&& !includes('salmon')) {
+            specs.push({ label: 'Seafood-free', icon: '✅' });
+        }
+        if (!includes('milk') && !includes('cheese') && !includes('cream') && !includes('butter')) {
+            specs.push({ label: 'Dairy-free', icon:'✅' });
+        }
         return specs;
     };
+
 
     return (
         <SafeAreaView style={styles.container}>
@@ -370,15 +350,7 @@ export default function App() {
             </Modal>
 
             {/* Main Content */}
-            <ScrollView 
-                ref={scrollViewRef}
-                style={styles.content} 
-                keyboardShouldPersistTaps="handled"
-                onScroll={(event) => {
-                    setScrollPosition(event.nativeEvent.contentOffset.y);
-                }}
-                scrollEventThrottle={16}
-            >
+            <ScrollView style={styles.content} keyboardShouldPersistTaps="handled">
                 {loading && (
                     <View style={styles.loadingContainer}>
                         <ActivityIndicator size="large" color="#FF8C42" />
