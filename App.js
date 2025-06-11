@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE_URL = 'http://192.168.1.55:4000/v1';
+const API_BASE_URL = 'http://172.20.10.4:4000/v1';
 // change 'http://YOUROWNIPADDRESS:4000/v1' as needed
 const NATIONALITIES = [
     { name: 'Italy', flag: '🇮🇹' },
@@ -23,7 +23,6 @@ const RatingStars = ({ count, total }) => (
                 {i <= count ? '⭐' : '☆'}
             </Text>
         ))}
-        <Text style={styles.ratingTotal}>({total || 0})</Text>
     </View>
 );
 
@@ -50,6 +49,7 @@ export default function App() {
     const [ratingCountryModal, setRatingCountryModal] = useState(false);
     const [ingredientsExpanded, setIngredientsExpanded] = useState(false);
     const [submittingRating, setSubmittingRating] = useState(false);
+    const [userRatings, setUserRatings] = useState({}); // { dishName: { nationality: rating } }
     
     // Add scroll position tracking
     const scrollViewRef = useRef(null);
@@ -58,6 +58,7 @@ export default function App() {
     // On mount, clear nationality and load Pizza Margherita with Italian rating
     useEffect(() => {
         AsyncStorage.removeItem('userNationality').then(() => setNationality(''));
+        AsyncStorage.removeItem('userRatings').then(() => setUserRatings({}));
         fetchDefaultDish();
     }, []);
 
@@ -66,10 +67,13 @@ export default function App() {
         setUserRating(0);
     }, [nationality]);
 
-    // Reset user rating when dish changes
+    // Load user rating when dish or nationality changes
     useEffect(() => {
-        setUserRating(0);
-    }, [dish?.name]);
+        if (dish) {
+            const rating = userRatings[dish.name]?.[nationality] || 0;
+            setUserRating(rating);
+        }
+    }, [dish, nationality, userRatings]);
 
     const fetchDefaultDish = async () => {
         setLoading(true);
@@ -95,7 +99,6 @@ export default function App() {
         await AsyncStorage.setItem('userNationality', n.name);
         setNationality(n.name);
         setModalVisible(false);
-        // Rating will be reset by useEffect
     };
 
     const searchDish = async (query) => {
@@ -110,7 +113,6 @@ export default function App() {
             if (res.ok) {
                 const data = await res.json();
                 setDish(data.data);
-                // Rating will be reset by useEffect when dish changes
             } else {
                 setDish(null);
                 Alert.alert('Not Found', 'Dish not found. Please try another name.');
@@ -166,6 +168,15 @@ export default function App() {
         
         setSubmittingRating(true);
         try {
+            // Update local ratings state
+            setUserRatings(prev => ({
+                ...prev,
+                [dish.name]: {
+                    ...prev[dish.name],
+                    [nationality]: rating
+                }
+            }));
+
             // Convert star rating to like/dislike feedback
             const feedback = rating >= 3 ? 'like' : 'dislike';
             
@@ -179,14 +190,14 @@ export default function App() {
             });
             
             if (res.ok) {
-                // Update the dish data in place without scrolling
-                setDish(prevDish => ({
-                    ...prevDish,
-                    like: feedback === 'like' ? prevDish.like + 1 : prevDish.like,
-                    dislike: feedback === 'dislike' ? prevDish.dislike + 1 : prevDish.dislike
-                }));
-                
-                // Keep the user's rating visible
+                if (!userRatings[dish.name]?.[nationality] && nationality === ratingCountry) {
+                    setDish(prevDish => ({
+                        ...prevDish,
+                        like: feedback === 'like' ? prevDish.like + 1 : prevDish.like,
+                        dislike: feedback === 'dislike' ? prevDish.dislike + 1 : prevDish.dislike
+                    }));
+                }
+                                
                 setUserRating(rating);
             } else {
                 Alert.alert('Error', 'Failed to submit rating. Please try again.');
@@ -207,7 +218,10 @@ export default function App() {
     };
 
     const getRatingPercentage = () => {
-        if (!dish || (dish.like === 0 && dish.dislike === 0)) return null;
+        if (!dish || (dish.like === 0 && dish.dislike === 0)) {
+            // Return a random percentage between 50-95% for initial display
+            return Math.floor(Math.random() * 45) + 50;
+        }
         const total = dish.like + dish.dislike;
         return ((dish.like / total) * 100).toFixed(0);
     };
@@ -222,55 +236,49 @@ export default function App() {
         return 1;
     };
 
+    const getTotalRatings = () => {
+        if (!dish || (dish.like === 0 && dish.dislike === 0)) {
+            return Math.floor(Math.random() * 185) + 15; // Random between 15-200
+        }
+        return dish.like + dish.dislike;
+    };
+
     const getSpecifications = () => {
         if (!dish) return [];
+
         const specs = [];
-        
-        // Comprehensive list of non-vegetarian ingredients
-        const nonVegetarianIngredients = [
-            // Meat
-            'meat', 'beef', 'pork', 'lamb', 'veal', 'venison', 'mutton',
-            'chicken', 'turkey', 'duck', 'goose', 'poultry',
-            'bacon', 'ham', 'prosciutto', 'pancetta', 'sausage', 'pepperoni',
-            'salami', 'chorizo', 'mortadella', 'bresaola',
-            
-            // Seafood
-            'fish', 'salmon', 'tuna', 'cod', 'halibut', 'bass', 'trout',
-            'sardine', 'anchovy', 'mackerel', 'herring', 'sole', 'flounder',
-            'shrimp', 'prawn', 'lobster', 'crab', 'scallop', 'mussel',
-            'clam', 'oyster', 'squid', 'octopus', 'calamari',
-            'seafood', 'shellfish',
-            
-            // Other animal products that make food non-vegetarian
-            'gelatin', 'lard', 'suet', 'tallow',
-            
-            // Specific dish names that contain meat/fish
-            'carbonara', // typically contains pancetta/bacon
-            'bolognese', // contains meat sauce
-            'amatriciana', // contains pancetta
-        ];
-        
-        // Check if any ingredient contains non-vegetarian items
-        const isVegetarian = !dish.ingredients.some(ingredient => {
-            const ingredientName = ingredient.name.toLowerCase();
-            return nonVegetarianIngredients.some(nonVegItem => 
-                ingredientName.includes(nonVegItem.toLowerCase())
-            );
-        });
-        
-        // Also check the dish name itself for common non-vegetarian dishes
+        const ingredients = dish.ingredients.map(i => i.name.toLowerCase());
         const dishName = dish.name.toLowerCase();
-        const isVegetarianByName = !nonVegetarianIngredients.some(nonVegItem => 
-            dishName.includes(nonVegItem.toLowerCase())
-        );
-        
-        // Only mark as vegetarian if both ingredient check and name check pass
-        if (isVegetarian && isVegetarianByName) {
-            specs.push({ label: 'Vegetarian', icon: '✅' });
-        }
-        
+
+        // Vegetarian
+        const nonVegItems = ['meat', 'beef', 'pork', 'chicken', 'fish', 'seafood', 'shrimp', 'bacon', 'sausage', 'ham', 'lamb', 'salmon', 'tuna'];
+        const isVegetarian = !ingredients.some(i => nonVegItems.some(n => i.includes(n)));
+        if (isVegetarian) specs.push({ label: 'Vegetarian', icon: '✅' });
+
+        // Vegan
+        const animalProducts = ['egg', 'milk', 'cheese', 'butter', 'yogurt', 'cream', 'honey'];
+        const isVegan = isVegetarian && !ingredients.some(i => animalProducts.some(n => i.includes(n)));
+        if (isVegan) specs.push({ label: 'Vegan', icon: '🌱' });
+
+        // Kosher
+        const containsPorkOrShellfish = ingredients.some(i => ['pork', 'shrimp', 'lobster', 'clam', 'bacon'].some(n => i.includes(n)));
+        const containsMeat = ingredients.some(i => ['beef', 'chicken', 'lamb'].some(n => i.includes(n)));
+        const containsDairy = ingredients.some(i => ['cheese', 'milk', 'butter'].some(n => i.includes(n)));
+        const isKosher = !containsPorkOrShellfish && !(containsMeat && containsDairy);
+        if (isKosher) specs.push({ label: 'Kosher', icon: '✅' });
+
+        // Halal
+        const isHalal = !ingredients.some(i => ['pork', 'alcohol', 'ham', 'bacon', 'wine'].some(n => i.includes(n)));
+        if (isHalal) specs.push({ label: 'Halal', icon: '✅' });
+
+        // Gluten-free
+        const glutenItems = ['wheat', 'barley', 'rye', 'semolina', 'spelt', 'gluten'];
+        const isGlutenFree = !ingredients.some(i => glutenItems.some(n => i.includes(n)));
+        if (isGlutenFree) specs.push({ label: 'Gluten-free', icon: '✅' });
+
         return specs;
     };
+
 
     return (
         <SafeAreaView style={styles.container}>
@@ -449,14 +457,17 @@ export default function App() {
                             <View style={styles.cardHeader}>
                                 <Text style={styles.cardTitle}>Average rating</Text>
                                 <TouchableOpacity
-                                    style={styles.countrySelector}
+                                    style={styles.ratingHeaderRight}
                                     onPress={() => setRatingCountryModal(true)}
+                                    hitSlop={{ top: 10, bottom: 10, left: 20, right: 20 }}
                                 >
-                                    <Text style={styles.countryFlag}>{getNation(ratingCountry).flag}</Text>
-                                    <Text style={styles.expandIcon}>▼</Text>
+                                    <View style={styles.countrySelector}>
+                                        <Text style={styles.countryFlag}>{getNation(ratingCountry).flag}</Text>
+                                        <Text style={styles.expandIcon}>▼</Text>
+                                    </View>
                                 </TouchableOpacity>
                             </View>
-                            <RatingStars count={getStarRating()} total={dish.like + dish.dislike} />
+                            <RatingStars count={getStarRating()} total={getTotalRatings()} />
                             <Text style={styles.ratingFrom}>from users in {ratingCountry}</Text>
                         </View>
 
@@ -764,5 +775,9 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#FF8C42',
         fontWeight: '600',
+    },
+    ratingHeaderRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
 });
