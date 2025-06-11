@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE_URL = 'http://192.168.1.55:4000/v1';
+const API_BASE_URL = 'http://172.20.10.4:4000/v1';
 // change 'http://YOUROWNIPADDRESS:4000/v1' as needed
 const NATIONALITIES = [
     { name: 'Italy', flag: '🇮🇹' },
@@ -23,7 +23,6 @@ const RatingStars = ({ count, total }) => (
                 {i <= count ? '⭐' : '☆'}
             </Text>
         ))}
-        <Text style={styles.ratingTotal}>({total || 0})</Text>
     </View>
 );
 
@@ -449,9 +448,10 @@ export default function App() {
                             <View style={styles.cardHeader}>
                                 <Text style={styles.cardTitle}>Average rating</Text>
                                 <TouchableOpacity
-                                    style={styles.countrySelector}
+                                    style={[styles.countrySelector, { padding: 10 }]}  // 放大可点击区域
                                     onPress={() => setRatingCountryModal(true)}
-                                >
+                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} // 灵敏响应区域
+                                    >
                                     <Text style={styles.countryFlag}>{getNation(ratingCountry).flag}</Text>
                                     <Text style={styles.expandIcon}>▼</Text>
                                 </TouchableOpacity>
