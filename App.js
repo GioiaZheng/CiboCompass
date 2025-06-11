@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE_URL = 'http://172.20.10.4:4000/v1';
+const API_BASE_URL = 'http://192.168.1.5:4000/v1';
 // change 'http://YOUROWNIPADDRESS:4000/v1' as needed
 const NATIONALITIES = [
     { name: 'Italy', flag: '🇮🇹' },
@@ -272,7 +272,7 @@ export default function App() {
         if (isHalal) specs.push({ label: 'Halal', icon: '✅' });
 
         // Gluten-free
-        const glutenItems = ['wheat', 'barley', 'rye', 'semolina', 'spelt', 'gluten'];
+        const glutenItems = ['wheat', 'barley', 'rye', 'semolina', 'spelt', 'gluten','spaghetti','dough'];
         const isGlutenFree = !ingredients.some(i => glutenItems.some(n => i.includes(n)));
         if (isGlutenFree) specs.push({ label: 'Gluten-free', icon: '✅' });
 
@@ -454,19 +454,19 @@ export default function App() {
 
                         {/* Average Rating */}
                         <View style={styles.card}>
-                            <View style={styles.cardHeader}>
+                            <TouchableOpacity
+                                style={styles.cardHeader}
+                                onPress={() => setRatingCountryModal(true)}
+                                activeOpacity={0.8}
+                            >
                                 <Text style={styles.cardTitle}>Average rating</Text>
-                                <TouchableOpacity
-                                    style={styles.ratingHeaderRight}
-                                    onPress={() => setRatingCountryModal(true)}
-                                    hitSlop={{ top: 10, bottom: 10, left: 20, right: 20 }}
-                                >
+                                <View style={styles.ratingHeaderRight}>
                                     <View style={styles.countrySelector}>
                                         <Text style={styles.countryFlag}>{getNation(ratingCountry).flag}</Text>
                                         <Text style={styles.expandIcon}>▼</Text>
                                     </View>
-                                </TouchableOpacity>
-                            </View>
+                                </View>
+                            </TouchableOpacity>
                             <RatingStars count={getStarRating()} total={getTotalRatings()} />
                             <Text style={styles.ratingFrom}>from users in {ratingCountry}</Text>
                         </View>
