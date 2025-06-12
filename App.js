@@ -200,10 +200,10 @@ export default function App() {
                                 
                 setUserRating(rating);
             } else {
-                Alert.alert('Error', 'Failed to submit rating. Please try again.');
+            
             }
         } catch (error) {
-            Alert.alert('Error', 'Failed to submit rating. Please try again.');
+            
         } finally {
             setSubmittingRating(false);
         }
