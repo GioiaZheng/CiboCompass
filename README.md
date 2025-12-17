@@ -120,7 +120,7 @@ Scan the QR code using the **Expo Go** app (available on Android and iOS) to pre
 
 ## 10. License
 
-MIT License © 2025 Gioia Zheng and CiboCompass Team
+MIT License © 2025
 
 > This project was developed solely for educational purposes as part of the *Human–Computer Interaction* course at Sapienza University of Rome.
 
@@ -130,7 +130,3 @@ MIT License © 2025 Gioia Zheng and CiboCompass Team
 
 > This repository represents a collaborative academic project for the HCI course.
 > The current version includes final usability improvements and additional testing fixes implemented by **Gioia Zheng**.
-
-```
-
----
