@@ -55,12 +55,49 @@ export default function App() {
     const scrollViewRef = useRef(null);
     const [scrollPosition, setScrollPosition] = useState(0);
 
-    // On mount, clear nationality and load Pizza Margherita with Italian rating
+    // On mount, restore user preferences and load saved/default dish
     useEffect(() => {
-        AsyncStorage.removeItem('userNationality').then(() => setNationality(''));
-        AsyncStorage.removeItem('userRatings').then(() => setUserRatings({}));
-        fetchDefaultDish();
+        const restoreState = async () => {
+            let storedNationality = '';
+            try {
+                storedNationality = await AsyncStorage.getItem('userNationality');
+                if (storedNationality) {
+                    setNationality(storedNationality);
+                    setRatingCountry(storedNationality);
+                }
+
+                const storedRatings = await AsyncStorage.getItem('userRatings');
+                if (storedRatings) {
+                    setUserRatings(JSON.parse(storedRatings));
+                }
+
+                const storedDish = await AsyncStorage.getItem('lastDish');
+                if (storedDish) {
+                    try {
+                        const parsed = JSON.parse(storedDish);
+                        if (parsed?.name) {
+                            setDish(parsed);
+                        }
+                    } catch (error) {
+                        console.warn('Failed to parse cached dish', error);
+                    }
+                }
+            } catch (error) {
+                console.warn('Failed to restore user preferences', error);
+            } finally {
+                fetchDefaultDish(storedNationality || 'Italy');
+            }
+        };
+
+        restoreState();
     }, []);
+
+    // Persist ratings whenever they change
+    useEffect(() => {
+        AsyncStorage.setItem('userRatings', JSON.stringify(userRatings)).catch(error => {
+            console.warn('Failed to persist ratings', error);
+        });
+    }, [userRatings]);
 
     // Reset user rating when nationality changes
     useEffect(() => {
@@ -75,15 +112,18 @@ export default function App() {
         }
     }, [dish, nationality, userRatings]);
 
-    const fetchDefaultDish = async () => {
+    const activeNationality = nationality || 'Italy';
+
+    const fetchDefaultDish = async (country = activeNationality) => {
         setLoading(true);
         try {
             const res = await fetch(`${API_BASE_URL}/dishes/Pizza Margherita`, {
-                headers: { 'X-User-Nationality': 'Italy' }
+                headers: { 'X-User-Nationality': country }
             });
             if (res.ok) {
                 const data = await res.json();
                 setDish(data.data);
+                await AsyncStorage.setItem('lastDish', JSON.stringify(data.data));
             } else {
                 setDish(null);
             }
@@ -98,6 +138,7 @@ export default function App() {
         const n = getNation(name);
         await AsyncStorage.setItem('userNationality', n.name);
         setNationality(n.name);
+        setRatingCountry(n.name);
         setModalVisible(false);
     };
 
@@ -108,16 +149,18 @@ export default function App() {
         setIngredientsExpanded(false); // Reset expansion when searching new dish
         try {
             const res = await fetch(`${API_BASE_URL}/dishes/${dishName}`, {
-                headers: { 'X-User-Nationality': 'Italy' }
+                headers: { 'X-User-Nationality': activeNationality }
             });
             if (res.ok) {
                 const data = await res.json();
                 setDish(data.data);
+                await AsyncStorage.setItem('lastDish', JSON.stringify(data.data));
             } else {
                 setDish(null);
                 Alert.alert('Not Found', 'Dish not found. Please try another name.');
             }
-        } catch {
+        } catch (error) {
+            console.warn('Dish search failed', error);
             Alert.alert('Error', 'Failed to search dish. Please try again.');
         } finally {
             setLoading(false);
@@ -125,29 +168,44 @@ export default function App() {
     };
 
     const fetchDishForCountry = async (country) => {
-        if (!dish) return;
+        if (!dish) return false;
         setLoading(true);
         try {
             const res = await fetch(`${API_BASE_URL}/dishes/${dish.name}`, {
                 headers: { 'X-User-Nationality': country }
             });
-            if (res.ok) {
-                const data = await res.json();
-                setDish(data.data);
-                // Restore scroll position after data loads
-                setTimeout(() => {
-                    scrollViewRef.current?.scrollTo({ y: scrollPosition, animated: false });
-                }, 100);
-            }
-        } catch {
-            // Handle error silently
+            if (!res.ok) throw new Error('Country fetch failed');
+
+            const data = await res.json();
+            setDish(data.data);
+            await AsyncStorage.setItem('lastDish', JSON.stringify(data.data));
+            // Restore scroll position after data loads
+            setTimeout(() => {
+                scrollViewRef.current?.scrollTo({ y: scrollPosition, animated: false });
+            }, 100);
+            return true;
+        } catch (error) {
+            console.warn('Failed to fetch dish for country', error);
+            Alert.alert('Error', 'Unable to load ratings for that country.');
+            return false;
         } finally {
             setLoading(false);
         }
     };
 
+    const handleRatingCountrySelect = async nat => {
+        const previousCountry = ratingCountry;
+        setRatingCountry(nat);
+        setRatingCountryModal(false);
+
+        const success = await fetchDishForCountry(nat);
+        if (!success) {
+            setRatingCountry(previousCountry);
+        }
+    };
+
     const submitFeedback = async type => {
-        const nat = nationality || 'Italy';
+        const nat = activeNationality;
         try {
             const res = await fetch(`${API_BASE_URL}/dishes/${dish.name}/feedback`, {
                 method: 'POST',
@@ -182,13 +240,13 @@ export default function App() {
             
             const res = await fetch(`${API_BASE_URL}/dishes/${dish.name}/feedback`, {
                 method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json', 
-                    'X-User-Nationality': nationality 
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-User-Nationality': nationality
                 },
                 body: JSON.stringify({ feedback }),
             });
-            
+
             if (res.ok) {
                 if (!userRatings[dish.name]?.[nationality] && nationality === ratingCountry) {
                     setDish(prevDish => ({
@@ -200,10 +258,11 @@ export default function App() {
                                 
                 setUserRating(rating);
             } else {
-            
+                Alert.alert('Error', 'Unable to submit your rating right now.');
             }
         } catch (error) {
-            
+            console.warn('Submitting rating failed', error);
+            Alert.alert('Error', 'Failed to submit rating. Please try again.');
         } finally {
             setSubmittingRating(false);
         }
@@ -219,8 +278,7 @@ export default function App() {
 
     const getRatingPercentage = () => {
         if (!dish || (dish.like === 0 && dish.dislike === 0)) {
-            // Return a random percentage between 50-95% for initial display
-            return Math.floor(Math.random() * 45) + 50;
+            return null;
         }
         const total = dish.like + dish.dislike;
         return ((dish.like / total) * 100).toFixed(0);
@@ -238,7 +296,7 @@ export default function App() {
 
     const getTotalRatings = () => {
         if (!dish || (dish.like === 0 && dish.dislike === 0)) {
-            return Math.floor(Math.random() * 185) + 15; // Random between 15-200
+            return 0;
         }
         return dish.like + dish.dislike;
     };
@@ -248,7 +306,6 @@ export default function App() {
 
         const specs = [];
         const ingredients = dish.ingredients.map(i => i.name.toLowerCase());
-        const dishName = dish.name.toLowerCase();
 
         // Vegetarian
         const nonVegItems = ['meat', 'beef', 'pork', 'chicken', 'fish', 'seafood', 'shrimp', 'bacon', 'sausage', 'ham', 'lamb', 'salmon', 'tuna'];
@@ -279,6 +336,10 @@ export default function App() {
         return specs;
     };
 
+
+    const ratingPercentage = getRatingPercentage();
+    const totalRatings = getTotalRatings();
+    const hasRatings = ratingPercentage !== null && totalRatings > 0;
 
     return (
         <SafeAreaView style={styles.container}>
@@ -361,11 +422,7 @@ export default function App() {
                             <TouchableOpacity
                                 key={nat.name}
                                 style={styles.nationalityOption}
-                                onPress={async () => {
-                                    setRatingCountry(nat.name);
-                                    setRatingCountryModal(false);
-                                    await fetchDishForCountry(nat.name);
-                                }}
+                                onPress={() => handleRatingCountrySelect(nat.name)}
                             >
                                 <Text style={styles.nationalityText}>{nat.flag} {nat.name}</Text>
                             </TouchableOpacity>
@@ -467,8 +524,16 @@ export default function App() {
                                     </View>
                                 </View>
                             </TouchableOpacity>
-                            <RatingStars count={getStarRating()} total={getTotalRatings()} />
-                            <Text style={styles.ratingFrom}>from users in {ratingCountry}</Text>
+                            {hasRatings ? (
+                                <>
+                                    <RatingStars count={getStarRating()} total={totalRatings} />
+                                    <Text style={styles.ratingFrom}>
+                                        {ratingPercentage}% positive from {totalRatings} users in {ratingCountry}
+                                    </Text>
+                                </>
+                            ) : (
+                                <Text style={styles.ratingEmpty}>No ratings yet from {ratingCountry}. Be the first to rate!</Text>
+                            )}
                         </View>
 
                         {/* Your Rating */}
@@ -718,6 +783,11 @@ const styles = StyleSheet.create({
     ratingFrom: {
         fontSize: 14,
         color: '#666',
+    },
+    ratingEmpty: {
+        fontSize: 14,
+        color: '#999',
+        fontStyle: 'italic',
     },
     disabledMessage: {
         fontSize: 14,
