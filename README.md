@@ -1,100 +1,159 @@
 # CiboCompass
 
-CiboCompass is a React Native + Expo Go mobile app that helps international students in Italy quickly understand restaurant menus. The app shows dish details (ingredients, calories, allergens), lets you switch nationalities to see how tastes vary globally, and collects ratings and feedback to improve recommendations.
+🚀 Full-stack mobile app for international students in Italy
 
-## Table of Contents
-- [Features](#features)
-- [Prerequisites](#prerequisites)
-- [Quick Start](#quick-start)
-- [Running the Backend API](#running-the-backend-api)
-- [Configuring the Mobile App](#configuring-the-mobile-app)
-- [Using the App](#using-the-app)
-- [Project Structure](#project-structure)
-- [Contributors](#contributors)
-- [Course Information](#course-information)
-- [License](#license)
+CiboCompass is a **full-stack mobile application** designed to help users understand restaurant menus and make informed food choices across cultures.
 
-## Features
-- 🌍 **Cultural food discovery** — browse traditional dishes from multiple countries.
-- ⭐ **User ratings** — rate each dish and see country-specific averages.
-- 🥗 **Dietary filters** — highlights gluten-free or vegetarian options when available.
-- 🧭 **Intuitive navigation** — smooth scrolling, quick country switching, and saved preferences.
-- 💬 **Feedback loop** — ratings are cached locally and sent to the backend for personalization.
+The system combines a **React Native (Expo) frontend** with a **Go-based backend API**, supporting real-time dish information, personalized ratings, and offline-first interaction.
 
-## Prerequisites
-- **Node.js** 18+ and **npm**.
-- **Expo Go** app installed on your Android/iOS device.
-- Optional: **Go 1.21+** to run the local backend API (provides dish data and ratings).
+---
 
-## Quick Start
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
-2. Start the Expo development server:
-   ```bash
-   npm start
-   ```
-3. Scan the QR code shown in the terminal/browser with **Expo Go**. The app will load on your device or emulator.
+# Highlights
 
-If you also want live dish data and rating persistence, run the backend API first (see below) and configure the app to point to it.
+- 📱 Cross-platform mobile app built with React Native + Expo  
+- ⚙️ Backend API implemented in Go with SQLite persistence  
+- 🌍 Cultural-aware exploration based on nationality  
+- 💾 Offline-first rating system with local caching and sync  
+- 🎯 User-centered design following HCI principles  
 
-## Running the Backend API
-The backend is a small Go API that serves dish information and stores ratings in SQLite.
+---
 
-1. Install Go dependencies and start the server:
-   ```bash
-   cd backend
-   go run ./cmd/api
-   ```
-2. The API listens on **http://localhost:4000** by default. If you run it on a different machine, ensure your phone/emulator can reach that IP.
+# System Architecture
 
-> The Expo app expects the API at `http://<YOUR_IP>:4000/v1`.
-
-## Configuring the Mobile App
-Set the API base URL in `App.js` so the mobile client can reach your backend:
-
-```js
-const API_BASE_URL = 'http://<YOUR_IP_ADDRESS>:4000/v1';
 ```
 
-Replace `<YOUR_IP_ADDRESS>` with the LAN IP of the machine running the Go server (e.g., `192.168.0.10`). Save the file and reload the app via Expo.
+Mobile App (React Native)
+↓
+REST API (Go)
+↓
+SQLite Database
 
-## Using the App
-1. **Choose your nationality**: tap the flag button to select a country; preferences are saved locally.
-2. **Search a dish**: type a dish name (e.g., “Pizza Margherita”) and tap **Search** to fetch details.
-3. **Read the details**: view ingredients, calories, allergens, and global “liked by” percentages; expand/collapse ingredients as needed.
-4. **Switch countries**: change nationality to see how ratings differ per audience; the app refreshes the current dish automatically.
-5. **Rate the dish**: tap the stars to submit your rating. Ratings are cached offline and sent to the API when available.
-6. **Resume where you left off**: the last viewed dish and your ratings persist between sessions.
-
-## Project Structure
 ```
+
+---
+
+# System Design
+
+### Data Flow
+
+1. User searches or selects a dish in the mobile app  
+2. App sends request to backend API  
+3. Backend retrieves dish data from SQLite  
+4. Response returned to mobile client  
+5. User submits rating  
+6. Rating stored locally (offline-first)  
+7. Synced to backend when connection is available  
+
+---
+
+### Design Decisions
+
+- **Offline-first architecture**  
+  Ratings are cached locally to ensure usability without network connectivity.
+
+- **Lightweight backend (Go)**  
+  Chosen for efficient concurrency and low overhead.
+
+- **REST API design**  
+  Stateless endpoints for scalability and easy integration.
+
+- **SQLite database**  
+  Simple and fast for development and local persistence.
+
+---
+
+### Future Improvements
+
+- Replace SQLite with PostgreSQL for scalability  
+- Add authentication system (JWT-based users)  
+- Introduce recommendation engine (collaborative filtering)  
+- Deploy backend with Docker and cloud services  
+
+---
+
+# Key Features
+
+### 🌍 Cultural Food Exploration
+- Browse dishes across different countries  
+- Switch nationality to compare preferences  
+
+### ⭐ Rating System
+- Submit ratings per dish  
+- View aggregated ratings by country  
+
+### 🥗 Dietary Awareness
+- Display ingredients, calories, allergens  
+- Highlight vegetarian / gluten-free options  
+
+### 💾 Offline Support
+- Ratings stored locally when offline  
+- Synced automatically when backend is available  
+
+---
+
+# API Endpoints
+
+| Method | Endpoint        | Description              |
+|--------|----------------|--------------------------|
+| GET    | /v1/dishes     | Fetch dish information   |
+| POST   | /v1/ratings    | Submit user rating       |
+
+---
+
+# Tech Stack
+
+| Layer        | Technology |
+|--------------|------------|
+| **Frontend** | React Native, Expo |
+| **Backend**  | Go (Golang), REST API |
+| **Database** | SQLite |
+| **UX**       | HCI principles, usability testing |
+
+---
+
+# Project Structure
+
+```
+
 CiboCompass/
-├── assets/              # Images, icons, fonts
-├── backend/             # Go API (dish data and ratings)
-├── App.js               # Main React Native app
-├── app.json             # Expo configuration
-├── index.js             # React Native entry point
-├── package.json         # Dependencies and npm scripts
-└── README.md            # Documentation
+├── assets/          # Images, icons
+├── backend/         # Go API
+├── App.js           # Main app
+├── package.json
+└── README.md
+
 ```
 
-## Contributors
-| Name | Role | Contribution |
-| --- | --- | --- |
-| **Gioia Zheng** | Frontend Development & Usability Testing | Designed and implemented main screens, fixed gluten-free and icon sensitivity issues, conducted user testing |
-| **Bery Nil Atabey** | Frontend Development | Implemented navigation and rating logic |
-| **Diastart Dias** | Data & Integration | Integrated backend logic and managed country-switching features |
-| **Nursultan Dias** | UI Design & QA | Designed visual elements and maintained UX consistency |
+---
 
-> Some contributors participated without GitHub accounts. Their names are listed to acknowledge their roles.
+# My Contribution
 
-## Course Information
-- **Course:** Human–Computer Interaction (HCI)
-- **Degree Program:** Applied Computer Science and Artificial Intelligence
-- **University:** Sapienza University of Rome
-- **Academic Year:** 2023–2024
+- Designed and implemented core mobile UI in React Native  
+- Improved usability through iterative HCI testing  
+- Fixed dietary filtering logic (e.g., gluten-free handling)  
+- Enhanced navigation responsiveness and UI interactions  
 
-## License
-MIT License © 2025 — created for the Human–Computer Interaction course at Sapienza University of Rome.
+---
+
+# Why This Project
+
+Food is one of the biggest barriers for international students.
+
+This project focuses on:
+
+- reducing language friction in menus  
+- improving decision-making with structured food data  
+- adapting recommendations across cultural preferences  
+
+---
+
+# Course Context
+
+Human–Computer Interaction (HCI)  
+Sapienza University of Rome — 2023–2024  
+
+---
+
+# License
+
+MIT License © 2025
