@@ -126,15 +126,6 @@ CiboCompass/
 
 ---
 
-# My Contribution
-
-- Designed and implemented core mobile UI in React Native  
-- Improved usability through iterative HCI testing  
-- Fixed dietary filtering logic (e.g., gluten-free handling)  
-- Enhanced navigation responsiveness and UI interactions  
-
----
-
 # Why This Project
 
 Food is one of the biggest barriers for international students.
