@@ -1,6 +1,6 @@
 module backend.CiboCompass.net
 
-go 1.23.3
+go 1.23
 
 require (
 	github.com/julienschmidt/httprouter v1.3.0

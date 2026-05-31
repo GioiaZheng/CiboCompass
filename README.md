@@ -111,6 +111,41 @@ SQLite Database
 
 ---
 
+# Quickstart
+
+```bash
+git clone https://github.com/GioiaZheng/CiboCompass.git
+cd CiboCompass
+
+npm install
+npm run start
+```
+
+Expected output:
+
+```text
+Starting project at .../CiboCompass
+Metro waiting on exp://...
+› Press a │ open Android
+› Press i │ open iOS simulator
+› Press w │ open web
+```
+
+Backend:
+
+```bash
+cd backend
+go run ./cmd/api
+```
+
+Expected output:
+
+```text
+starting development server on 0.0.0.0:4000
+```
+
+---
+
 # Project Structure
 
 ```
