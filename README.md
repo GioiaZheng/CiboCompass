@@ -112,7 +112,9 @@ Visual files are stored with explicit names:
 | Method | Endpoint        | Description              |
 |--------|----------------|--------------------------|
 | GET    | /v1/dishes     | Fetch dish information   |
-| POST   | /v1/ratings    | Submit user rating       |
+| POST   | /v1/dishes     | Create a dish            |
+| GET    | /v1/dishes/:dishName | Fetch dish details for a nationality |
+| POST   | /v1/dishes/:dishName/feedback | Submit dish feedback |
 
 ---
 
