@@ -62,6 +62,22 @@ SQLite Database
 
 ---
 
+### Offline Sync State
+
+The offline rating lifecycle is documented in [docs/offline-sync-state-diagram.md](docs/offline-sync-state-diagram.md). The current app stores user ratings locally with `AsyncStorage` and submits feedback to the backend when the request is available.
+
+---
+
+### Screenshots and Demo
+
+Visual files are stored with explicit names:
+
+- [docs/screenshots/cibocompass-dish-detail-screen.svg](docs/screenshots/cibocompass-dish-detail-screen.svg)
+- [docs/screenshots/cibocompass-rating-country-screen.svg](docs/screenshots/cibocompass-rating-country-screen.svg)
+- [docs/demo/cibocompass-demo.gif](docs/demo/cibocompass-demo.gif)
+
+---
+
 ### Future Improvements
 
 - Replace SQLite with PostgreSQL for scalability  

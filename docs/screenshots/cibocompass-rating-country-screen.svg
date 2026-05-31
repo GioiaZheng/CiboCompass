@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844" role="img" aria-labelledby="title desc">
+  <title id="title">CiboCompass rating country selector</title>
+  <desc id="desc">Mobile modal for selecting the nationality used to compare dish ratings.</desc>
+  <rect width="390" height="844" fill="#fffaf1"/>
+  <rect x="18" y="36" width="354" height="772" rx="28" fill="#ffffff" stroke="#ead7bf"/>
+  <rect x="18" y="36" width="354" height="772" rx="28" fill="#000000" opacity="0.42"/>
+  <rect x="42" y="232" width="306" height="374" rx="22" fill="#ffffff"/>
+  <text x="80" y="284" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#2f2f2f">Choose country for rating</text>
+  <rect x="70" y="320" width="250" height="48" rx="10" fill="#f5f5f5"/>
+  <text x="100" y="350" font-family="Arial, sans-serif" font-size="17" fill="#333333">Italy</text>
+  <rect x="70" y="382" width="250" height="48" rx="10" fill="#f5f5f5"/>
+  <text x="100" y="412" font-family="Arial, sans-serif" font-size="17" fill="#333333">France</text>
+  <rect x="70" y="444" width="250" height="48" rx="10" fill="#f5f5f5"/>
+  <text x="100" y="474" font-family="Arial, sans-serif" font-size="17" fill="#333333">India</text>
+  <rect x="70" y="506" width="250" height="48" rx="10" fill="#f5f5f5"/>
+  <text x="100" y="536" font-family="Arial, sans-serif" font-size="17" fill="#333333">USA</text>
+  <text x="170" y="584" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ff8c42">Cancel</text>
+</svg>

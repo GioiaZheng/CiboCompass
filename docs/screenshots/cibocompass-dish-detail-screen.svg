@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844" role="img" aria-labelledby="title desc">
+  <title id="title">CiboCompass dish detail screen</title>
+  <desc id="desc">Mobile dish detail screen showing search, dish image, ingredients, and cultural rating.</desc>
+  <rect width="390" height="844" fill="#fffaf1"/>
+  <rect x="18" y="36" width="354" height="772" rx="28" fill="#ffffff" stroke="#ead7bf"/>
+  <text x="42" y="82" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#f47b20">My nationality is Italy</text>
+  <rect x="42" y="112" width="306" height="44" rx="22" fill="#ffedc8"/>
+  <text x="62" y="140" font-family="Arial, sans-serif" font-size="14" fill="#7c5c3d">Pizza Margherita</text>
+  <rect x="42" y="184" width="306" height="170" rx="16" fill="#f5c16c"/>
+  <circle cx="138" cy="270" r="44" fill="#f8fafc" opacity="0.82"/>
+  <circle cx="200" cy="270" r="56" fill="#d92d20" opacity="0.78"/>
+  <circle cx="240" cy="242" r="18" fill="#f8fafc" opacity="0.86"/>
+  <text x="42" y="400" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#2f2f2f">Pizza Margherita</text>
+  <rect x="42" y="426" width="104" height="30" rx="15" fill="#bbdc64"/>
+  <text x="60" y="446" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#1f2933">Vegetarian</text>
+  <rect x="42" y="492" width="306" height="92" rx="12" fill="#ffffff" stroke="#ff8c42" stroke-width="2"/>
+  <text x="62" y="526" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#2f2f2f">Main Ingredients</text>
+  <text x="62" y="558" font-family="Arial, sans-serif" font-size="14" fill="#666666">Dough, tomato, mozzarella, basil</text>
+  <rect x="42" y="608" width="306" height="104" rx="12" fill="#ffffff" stroke="#ff8c42" stroke-width="2"/>
+  <text x="62" y="642" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#2f2f2f">Average rating</text>
+  <text x="62" y="682" font-family="Arial, sans-serif" font-size="22" fill="#f59e0b">★★★★★</text>
+  <text x="62" y="704" font-family="Arial, sans-serif" font-size="13" fill="#666666">98% positive from 100 users in Italy</text>
+</svg>
