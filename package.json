@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "check": "node scripts/check-app-js.js",
+    "check": "node scripts/check-app-js.js && node scripts/check-readme.js",
+    "check:readme": "node scripts/check-readme.js",
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
