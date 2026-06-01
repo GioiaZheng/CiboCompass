@@ -100,17 +100,17 @@ Retries should run when:
 
 ## Idempotency and Conflicts
 
-The current backend increments feedback counters, so duplicate submissions can
-overcount. Before automatic retry is enabled, the backend should accept an
-idempotency key or the client should keep strict local submission state.
+The backend accepts an optional idempotency key through the JSON
+`idempotencyKey` field or the `Idempotency-Key` header. A retry that reuses the
+same key returns success without incrementing the feedback counters again.
 
 Conflict rule:
 
 - for the same `dishName` and `nationality`, keep only the newest pending item,
 - if an older item has already synced, the newer item should be submitted as a
   separate user update,
-- if the backend adds idempotency support, send `idempotencyKey` with each
-  feedback request.
+- send `idempotencyKey` with each feedback request and reuse it for retries of
+  the same queued item.
 
 ## Implementation Checklist
 
@@ -120,4 +120,4 @@ Conflict rule:
 4. Remove it after a successful backend response.
 5. Increment `attemptCount` and schedule retry after a failure.
 6. Collapse pending items by `dishName` and `nationality`.
-7. Add backend idempotency support before enabling unattended retries.
+7. Send backend idempotency keys before enabling unattended retries.

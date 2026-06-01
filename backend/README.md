@@ -123,11 +123,15 @@ Request:
 
 ```json
 {
-  "feedback": "like"
+  "feedback": "like",
+  "idempotencyKey": "Pizza Margherita|Italy|2026-06-01T12:00:00.000Z"
 }
 ```
 
 `feedback` must be either `like` or `dislike`.
+`idempotencyKey` is optional. Clients can also send it with the
+`Idempotency-Key` header. Reusing the same key for a retry returns success
+without incrementing the feedback counters again.
 
 ## Tests
 

@@ -58,13 +58,13 @@ func (app *application) dishfeedbackHandler(response http.ResponseWriter, reques
 		return
 	}
 
-	feedback, err := app.ReadDishFeedback(request)
+	feedback, idempotencyKey, err := app.ReadDishFeedback(request)
 	if err != nil {
 		app.badRequestResponse(response, err.Error())
 		return
 	}
 
-	err = database.UpdateDishFeedback(app.db, app.logger, dishName, nationality, feedback)
+	err = database.UpdateDishFeedback(app.db, app.logger, dishName, nationality, feedback, idempotencyKey)
 	if err != nil {
 		if err == database.ErrDishNotFound {
 			app.notFoundResponse(response)

@@ -114,10 +114,17 @@ FROM Dishes
 	return &dish, nil
 }
 
-func UpdateDishFeedback(db *sql.DB, logger Logger, dishName string, nationality string, feedback string) error {
+func UpdateDishFeedback(db *sql.DB, logger Logger, dishName string, nationality string, feedback string, idempotencyKey string) error {
+	tx, err := db.Begin()
+	if err != nil {
+		logger.Printf("Error starting feedback transaction: %v", err)
+		return err
+	}
+	defer tx.Rollback()
+
 	dishQuery := `SELECT COUNT(*) FROM Dishes WHERE name = ?`
 	var count int
-	err := db.QueryRow(dishQuery, dishName).Scan(&count)
+	err = tx.QueryRow(dishQuery, dishName).Scan(&count)
 	if err != nil {
 		logger.Printf("Error checking if dish exists: %v", err)
 		return err
@@ -128,8 +135,24 @@ func UpdateDishFeedback(db *sql.DB, logger Logger, dishName string, nationality 
 		return ErrDishNotFound
 	}
 
+	if idempotencyKey != "" {
+		err = tx.QueryRow(
+			`SELECT COUNT(*) FROM FeedbackSubmissions WHERE idempotencyKey = ?`,
+			idempotencyKey,
+		).Scan(&count)
+		if err != nil {
+			logger.Printf("Error checking duplicate feedback submission: %v", err)
+			return err
+		}
+		if count > 0 {
+			logger.Printf("Ignored duplicate feedback submission for dish '%s' and nationality '%s'",
+				dishName, nationality)
+			return nil
+		}
+	}
+
 	checkQuery := `SELECT COUNT(*) FROM Feedbacks WHERE dishName = ? AND nationality = ?`
-	err = db.QueryRow(checkQuery, dishName, nationality).Scan(&count)
+	err = tx.QueryRow(checkQuery, dishName, nationality).Scan(&count)
 	if err != nil {
 		logger.Printf("Error checking existing feedback: %v", err)
 		return err
@@ -143,7 +166,7 @@ func UpdateDishFeedback(db *sql.DB, logger Logger, dishName string, nationality 
 			queryStr = `INSERT INTO Feedbacks (dishName, nationality, like, dislike) VALUES (?, ?, 0, 1)`
 		}
 
-		_, err = db.Exec(queryStr, dishName, nationality)
+		_, err = tx.Exec(queryStr, dishName, nationality)
 		if err != nil {
 			logger.Printf("Error inserting new feedback: %v", err)
 			return err
@@ -155,11 +178,30 @@ func UpdateDishFeedback(db *sql.DB, logger Logger, dishName string, nationality 
 			queryStr = `UPDATE Feedbacks SET dislike = dislike + 1, like = like WHERE dishName = ? AND nationality = ?`
 		}
 
-		_, err = db.Exec(queryStr, dishName, nationality)
+		_, err = tx.Exec(queryStr, dishName, nationality)
 		if err != nil {
 			logger.Printf("Error updating feedback: %v", err)
 			return err
 		}
+	}
+
+	if idempotencyKey != "" {
+		_, err = tx.Exec(
+			`INSERT INTO FeedbackSubmissions (idempotencyKey, dishName, nationality, feedback) VALUES (?, ?, ?, ?)`,
+			idempotencyKey,
+			dishName,
+			nationality,
+			feedback,
+		)
+		if err != nil {
+			logger.Printf("Error recording feedback submission: %v", err)
+			return err
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		logger.Printf("Error committing feedback update: %v", err)
+		return err
 	}
 
 	logger.Printf("Successfully updated '%s' feedback for dish '%s' and nationality '%s'",

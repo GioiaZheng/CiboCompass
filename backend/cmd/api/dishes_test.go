@@ -130,6 +130,52 @@ func TestFeedbackHandler(t *testing.T) {
 	}
 }
 
+func TestFeedbackHandlerIgnoresDuplicateIdempotencyKey(t *testing.T) {
+	app := newTestApplication(t)
+
+	dish := database.Dish{
+		Name:        "Pizza Margherita",
+		ImageURL:    "https://example.com/pizza.jpg",
+		Description: "Classic pizza",
+		Ingredients: []database.Ingredient{
+			{Name: "Tomato"},
+			{Name: "Mozzarella"},
+		},
+	}
+	if _, err := database.AddDish(app.db, app.logger, dish); err != nil {
+		t.Fatalf("create test dish: %v", err)
+	}
+
+	for i := 0; i < 2; i++ {
+		request := httptest.NewRequest(
+			http.MethodPost,
+			"/v1/dishes/Pizza%20Margherita/feedback",
+			bytes.NewBufferString(`{"feedback":"like","idempotencyKey":"italy-pizza-like-1"}`),
+		)
+		request.Header.Set("X-User-Nationality", "Italy")
+		response := httptest.NewRecorder()
+
+		app.routes().ServeHTTP(response, request)
+
+		if response.Code != http.StatusOK {
+			t.Fatalf("expected status %d, got %d: %s", http.StatusOK, response.Code, response.Body.String())
+		}
+	}
+
+	var likes, dislikes float64
+	err := app.db.QueryRow(
+		`SELECT like, dislike FROM Feedbacks WHERE dishName = ? AND nationality = ?`,
+		"Pizza Margherita",
+		"Italy",
+	).Scan(&likes, &dislikes)
+	if err != nil {
+		t.Fatalf("read feedback counts: %v", err)
+	}
+	if likes != 1 || dislikes != 0 {
+		t.Fatalf("expected one like and zero dislikes, got like=%v dislike=%v", likes, dislikes)
+	}
+}
+
 func TestFeedbackHandlerRejectsInvalidFeedback(t *testing.T) {
 	app := newTestApplication(t)
 
