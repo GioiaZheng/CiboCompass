@@ -31,8 +31,9 @@ The app persists the latest user-visible rating in `AsyncStorage` under
 When a user selects a rating, the UI updates local state first, stores a durable
 pending item under `pendingRatingFeedback`, and then sends
 `POST /v1/dishes/:dishName/feedback` to the backend with an idempotency key. If
-the request fails, the visible rating remains local and the pending item stays
-available for a later retry worker.
+the request fails, the visible rating remains local and the pending item is
+retried when the app starts, returns to foreground, or another rating sync
+succeeds.
 
 ## Durable Queue
 
@@ -121,4 +122,4 @@ Conflict rule:
 5. Increment `attemptCount` after a failure.
 6. Collapse pending items by `dishName` and `nationality`.
 7. Send backend idempotency keys before enabling unattended retries.
-8. Add a retry worker that submits pending items on app start and foreground.
+8. Submit pending items on app start and foreground.

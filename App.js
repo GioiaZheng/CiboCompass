@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     StyleSheet, Text, View, TextInput, TouchableOpacity, Image, ScrollView,
-    ActivityIndicator, Alert, SafeAreaView, Platform, StatusBar, Modal, Keyboard
+    ActivityIndicator, Alert, SafeAreaView, Platform, StatusBar, Modal, Keyboard, AppState
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_BASE_URL = 'http://192.168.1.5:4000/v1';
 const PENDING_FEEDBACK_KEY = 'pendingRatingFeedback';
+let pendingFeedbackSyncing = false;
 // change 'http://YOUROWNIPADDRESS:4000/v1' as needed
 const NATIONALITIES = [
     { name: 'Italy', flag: '🇮🇹' },
@@ -66,6 +67,56 @@ const markPendingFeedbackFailed = async idempotencyKey => {
             }
             : item
     )));
+};
+
+const syncPendingFeedbackItem = async item => {
+    const res = await fetch(`${API_BASE_URL}/dishes/${item.dishName}/feedback`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-User-Nationality': item.nationality,
+            'Idempotency-Key': item.idempotencyKey
+        },
+        body: JSON.stringify({
+            feedback: item.feedback,
+            idempotencyKey: item.idempotencyKey
+        }),
+    });
+
+    if (res.ok) {
+        await removePendingFeedback(item.idempotencyKey);
+        return true;
+    }
+
+    await markPendingFeedbackFailed(item.idempotencyKey);
+    return false;
+};
+
+const flushPendingFeedback = async () => {
+    if (pendingFeedbackSyncing) return;
+
+    pendingFeedbackSyncing = true;
+    try {
+        const items = await readPendingFeedback();
+        for (const item of items) {
+            if (!item?.dishName || !item?.nationality || !item?.feedback || !item?.idempotencyKey) {
+                continue;
+            }
+            try {
+                await syncPendingFeedbackItem(item);
+            } catch (error) {
+                console.warn('Failed to sync pending feedback item', error);
+                try {
+                    await markPendingFeedbackFailed(item.idempotencyKey);
+                } catch (storageError) {
+                    console.warn('Failed to update pending feedback state', storageError);
+                }
+                break;
+            }
+        }
+    } finally {
+        pendingFeedbackSyncing = false;
+    }
 };
 
 const RatingStars = ({ count, total }) => (
@@ -142,6 +193,22 @@ export default function App() {
         };
 
         restoreState();
+    }, []);
+
+    useEffect(() => {
+        flushPendingFeedback().catch(error => {
+            console.warn('Failed to sync pending feedback', error);
+        });
+
+        const subscription = AppState.addEventListener('change', nextState => {
+            if (nextState === 'active') {
+                flushPendingFeedback().catch(error => {
+                    console.warn('Failed to sync pending feedback', error);
+                });
+            }
+        });
+
+        return () => subscription.remove();
     }, []);
 
     // Persist ratings whenever they change
@@ -322,6 +389,9 @@ export default function App() {
                 } catch (error) {
                     console.warn('Failed to clear synced feedback', error);
                 }
+                flushPendingFeedback().catch(error => {
+                    console.warn('Failed to sync pending feedback', error);
+                });
                 if (!userRatings[dish.name]?.[nationality] && nationality === ratingCountry) {
                     setDish(prevDish => ({
                         ...prevDish,
