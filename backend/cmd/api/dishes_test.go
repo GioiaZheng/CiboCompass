@@ -2,11 +2,11 @@ package main
 
 import (
 	"bytes"
-	"database/sql"
 	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"testing"
 
 	"backend.CiboCompass.net/internal/database"
@@ -15,11 +15,10 @@ import (
 func newTestApplication(t *testing.T) *application {
 	t.Helper()
 
-	db, err := sql.Open("sqlite3", ":memory:")
+	db, err := database.OpenDatabase(filepath.Join(t.TempDir(), "test.db"))
 	if err != nil {
 		t.Fatalf("open test database: %v", err)
 	}
-	db.SetMaxOpenConns(1)
 
 	t.Cleanup(func() {
 		if err := db.Close(); err != nil {
