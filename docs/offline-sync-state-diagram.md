@@ -17,8 +17,8 @@ stateDiagram-v2
 
 ## Current Implementation
 
-The app currently persists the latest user-visible rating in
-`AsyncStorage` under `userRatings`:
+The app persists the latest user-visible rating in `AsyncStorage` under
+`userRatings`:
 
 ```json
 {
@@ -28,15 +28,15 @@ The app currently persists the latest user-visible rating in
 }
 ```
 
-When a user selects a rating, the UI updates local state first and then sends
-`POST /v1/dishes/:dishName/feedback` to the backend. If the request fails, the
-visible rating remains local, but the app does not yet maintain a durable retry
-queue.
+When a user selects a rating, the UI updates local state first, stores a durable
+pending item under `pendingRatingFeedback`, and then sends
+`POST /v1/dishes/:dishName/feedback` to the backend with an idempotency key. If
+the request fails, the visible rating remains local and the pending item stays
+available for a later retry worker.
 
-## Target Durable Queue
+## Durable Queue
 
-The next implementation step is to store a pending queue separately from
-`userRatings`:
+The app stores pending submissions separately from `userRatings`:
 
 ```json
 {
@@ -118,6 +118,7 @@ Conflict rule:
 2. Enqueue a feedback item before the network request.
 3. Mark the item `syncing` during submission.
 4. Remove it after a successful backend response.
-5. Increment `attemptCount` and schedule retry after a failure.
+5. Increment `attemptCount` after a failure.
 6. Collapse pending items by `dishName` and `nationality`.
 7. Send backend idempotency keys before enabling unattended retries.
+8. Add a retry worker that submits pending items on app start and foreground.

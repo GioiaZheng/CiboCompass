@@ -6,6 +6,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_BASE_URL = 'http://192.168.1.5:4000/v1';
+const PENDING_FEEDBACK_KEY = 'pendingRatingFeedback';
 // change 'http://YOUROWNIPADDRESS:4000/v1' as needed
 const NATIONALITIES = [
     { name: 'Italy', flag: '🇮🇹' },
@@ -15,6 +16,57 @@ const NATIONALITIES = [
     { name: 'Japan', flag: '🇯🇵' },
 ];
 const getNation = v => NATIONALITIES.find(n => n.name === v) || { name: v, flag: '🌍' };
+
+const readPendingFeedback = async () => {
+    const stored = await AsyncStorage.getItem(PENDING_FEEDBACK_KEY);
+    if (!stored) return [];
+
+    try {
+        const parsed = JSON.parse(stored);
+        return Array.isArray(parsed?.items) ? parsed.items : [];
+    } catch (error) {
+        console.warn('Failed to parse pending feedback queue', error);
+        return [];
+    }
+};
+
+const writePendingFeedback = async items => {
+    await AsyncStorage.setItem(PENDING_FEEDBACK_KEY, JSON.stringify({
+        schemaVersion: 1,
+        items
+    }));
+};
+
+const enqueuePendingFeedback = async item => {
+    const items = await readPendingFeedback();
+    const collapsed = items.filter(existing => (
+        existing.dishName !== item.dishName || existing.nationality !== item.nationality
+    ));
+
+    await writePendingFeedback([...collapsed, item]);
+};
+
+const removePendingFeedback = async idempotencyKey => {
+    const items = await readPendingFeedback();
+    await writePendingFeedback(items.filter(item => item.idempotencyKey !== idempotencyKey));
+};
+
+const markPendingFeedbackFailed = async idempotencyKey => {
+    const items = await readPendingFeedback();
+    const now = new Date().toISOString();
+
+    await writePendingFeedback(items.map(item => (
+        item.idempotencyKey === idempotencyKey
+            ? {
+                ...item,
+                status: 'pending_sync',
+                attemptCount: (item.attemptCount || 0) + 1,
+                lastAttemptAt: now,
+                updatedAt: now
+            }
+            : item
+    )));
+};
 
 const RatingStars = ({ count, total }) => (
     <View style={styles.ratingStars}>
@@ -223,8 +275,23 @@ export default function App() {
 
     const submitRating = async (rating) => {
         if (!dish || !nationality || !rating || submittingRating) return;
-        
+
         setSubmittingRating(true);
+        const feedback = rating >= 3 ? 'like' : 'dislike';
+        const now = new Date().toISOString();
+        const pendingItem = {
+            idempotencyKey: `${dish.name}|${nationality}|${now}`,
+            dishName: dish.name,
+            nationality,
+            rating,
+            feedback,
+            status: 'syncing',
+            attemptCount: 0,
+            lastAttemptAt: now,
+            createdAt: now,
+            updatedAt: now
+        };
+
         try {
             // Update local ratings state
             setUserRatings(prev => ({
@@ -235,19 +302,26 @@ export default function App() {
                 }
             }));
 
-            // Convert star rating to like/dislike feedback
-            const feedback = rating >= 3 ? 'like' : 'dislike';
-            
+            await enqueuePendingFeedback(pendingItem);
+
             const res = await fetch(`${API_BASE_URL}/dishes/${dish.name}/feedback`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-User-Nationality': nationality
                 },
-                body: JSON.stringify({ feedback }),
+                body: JSON.stringify({
+                    feedback,
+                    idempotencyKey: pendingItem.idempotencyKey
+                }),
             });
 
             if (res.ok) {
+                try {
+                    await removePendingFeedback(pendingItem.idempotencyKey);
+                } catch (error) {
+                    console.warn('Failed to clear synced feedback', error);
+                }
                 if (!userRatings[dish.name]?.[nationality] && nationality === ratingCountry) {
                     setDish(prevDish => ({
                         ...prevDish,
@@ -258,10 +332,20 @@ export default function App() {
                                 
                 setUserRating(rating);
             } else {
+                try {
+                    await markPendingFeedbackFailed(pendingItem.idempotencyKey);
+                } catch (error) {
+                    console.warn('Failed to update pending feedback state', error);
+                }
                 Alert.alert('Error', 'Unable to submit your rating right now.');
             }
         } catch (error) {
             console.warn('Submitting rating failed', error);
+            try {
+                await markPendingFeedbackFailed(pendingItem.idempotencyKey);
+            } catch (storageError) {
+                console.warn('Failed to update pending feedback state', storageError);
+            }
             Alert.alert('Error', 'Failed to submit rating. Please try again.');
         } finally {
             setSubmittingRating(false);

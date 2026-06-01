@@ -66,7 +66,7 @@ SQLite Database
 
 ### Offline Sync State
 
-The offline rating lifecycle is documented in [docs/offline-sync-state-diagram.md](docs/offline-sync-state-diagram.md). The current app stores user ratings locally with `AsyncStorage` and submits feedback to the backend when the request is available.
+The offline rating lifecycle is documented in [docs/offline-sync-state-diagram.md](docs/offline-sync-state-diagram.md). The app stores user ratings and pending feedback submissions locally with `AsyncStorage`, then submits idempotent feedback requests to the backend when the request is available.
 
 ---
 
