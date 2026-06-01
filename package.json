@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "check": "node scripts/check-app-js.js",
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
