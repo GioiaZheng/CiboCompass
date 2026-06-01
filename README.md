@@ -50,6 +50,8 @@ SQLite Database
 
 - **Offline-first architecture**  
   Ratings are cached locally to ensure usability without network connectivity.
+  The current local-cache behavior and the planned durable retry queue are
+  documented in [docs/offline-sync-state-diagram.md](docs/offline-sync-state-diagram.md).
 
 - **Lightweight backend (Go)**  
   Chosen for efficient concurrency and low overhead.
