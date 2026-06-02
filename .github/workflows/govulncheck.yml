@@ -1,0 +1,28 @@
+name: Go vulnerability scan
+
+on:
+  push:
+  pull_request:
+    branches: [main]
+
+jobs:
+  govulncheck:
+    name: Backend govulncheck
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: Install SQLite build dependencies
+        run: sudo apt-get update && sudo apt-get install -y gcc sqlite3 libsqlite3-dev
+
+      - name: Run govulncheck
+        working-directory: backend
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
