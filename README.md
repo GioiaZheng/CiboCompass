@@ -65,6 +65,16 @@ SQLite Database
 - **SQLite database**  
   Simple and fast for development and local persistence.
 
+  The backend uses one bounded `database/sql` pool with eight open and four
+  idle connections. Foreign-key enforcement, a five-second busy timeout, and
+  WAL journaling are applied to every physical connection. Result rows are
+  closed before dependent ingredient queries so the read path remains safe
+  even when the pool is constrained to one connection.
+
+  This is a correctness-oriented local policy, not a published throughput
+  claim. QPS and P99 latency will only be reported with a reproducible workload
+  and benchmark configuration.
+
 ---
 
 ### Offline Sync State
