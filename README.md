@@ -7,7 +7,7 @@
 
 CiboCompass is a **full-stack mobile application** designed to help users understand restaurant menus and make informed food choices across cultures.
 
-The system combines a **React Native (Expo) frontend** with a **Go-based backend API**, supporting real-time dish information, personalized ratings, and offline-first interaction.
+The system combines a **React Native (Expo) frontend** with a **Go-based backend API**, supporting real-time dish information, personalized ratings, and offline-resilient rating submission.
 
 ---
 
@@ -16,7 +16,7 @@ The system combines a **React Native (Expo) frontend** with a **Go-based backend
 - 📱 Cross-platform mobile app built with React Native + Expo  
 - ⚙️ Backend API implemented in Go with SQLite persistence  
 - 🌍 Cultural-aware exploration based on nationality  
-- 💾 Offline-first rating system with local caching and sync  
+- 💾 Offline-resilient rating queue with local caching and idempotent delivery  
 - 🎯 User-centered design following HCI principles  
 
 ---
@@ -44,17 +44,25 @@ SQLite Database
 3. Backend retrieves dish data from SQLite  
 4. Response returned to mobile client  
 5. User submits rating  
-6. Rating stored locally (offline-first)  
-7. Synced to backend when connection is available  
+6. Rating stored locally and added to a durable submission queue  
+7. Pending feedback is retried on app start or foreground events  
 
 ---
 
 ### Design Decisions
 
-- **Offline-first architecture**  
-  Ratings are cached locally to ensure usability without network connectivity.
-  The current local-cache behavior and the planned durable retry queue are
-  documented in [docs/offline-sync-state-diagram.md](docs/offline-sync-state-diagram.md).
+- **Offline-resilient rating delivery**  
+  Ratings remain visible locally without network connectivity. Pending feedback
+  is persisted in `AsyncStorage`, retried with the same idempotency key, and
+  collapsed to the newest queued value for a dish/nationality pair. The
+  [current state machine](docs/offline-sync-state-diagram.md) documents the
+  implemented guarantees and their limits.
+
+  This is not yet full multi-device synchronization: the API has no stable
+  actor identity or monotonic client sequence, and the backend stores aggregate
+  counters rather than per-actor rating state. The
+  [versioned sync protocol design](docs/offline-rating-sync-design.md) defines
+  the migration required before making that claim.
 
 - **Lightweight backend (Go)**  
   Chosen for efficient concurrency and low overhead.
@@ -79,7 +87,13 @@ SQLite Database
 
 ### Offline Sync State
 
-The offline rating lifecycle is documented in [docs/offline-sync-state-diagram.md](docs/offline-sync-state-diagram.md). The app stores user ratings and pending feedback submissions locally with `AsyncStorage`, then submits idempotent feedback requests to the backend when the request is available.
+The implemented offline rating lifecycle is documented in
+[docs/offline-sync-state-diagram.md](docs/offline-sync-state-diagram.md). The app
+stores user ratings and pending feedback submissions locally with
+`AsyncStorage`, then retries idempotent delivery when the app has an opportunity
+to sync. Ordering across requests and devices is intentionally listed as a
+non-guarantee until the [versioned protocol](docs/offline-rating-sync-design.md)
+is implemented.
 
 ---
 
@@ -98,6 +112,7 @@ Visual files are stored with explicit names:
 - Replace SQLite with PostgreSQL for scalability  
 - Add authentication system (JWT-based users)  
 - Introduce recommendation engine (collaborative filtering)  
+- Implement actor-scoped, versioned rating synchronization  
 - Deploy backend with Docker and cloud services  
 
 ---
@@ -216,3 +231,4 @@ Sapienza University of Rome — 2023–2024
 # License
 
 MIT License © 2025
+
