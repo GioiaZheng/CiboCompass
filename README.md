@@ -1,5 +1,9 @@
 # CiboCompass
 
+[![CI](https://github.com/GioiaZheng/CiboCompass/actions/workflows/ci.yml/badge.svg)](https://github.com/GioiaZheng/CiboCompass/actions/workflows/ci.yml)
+[![govulncheck](https://github.com/GioiaZheng/CiboCompass/actions/workflows/govulncheck.yml/badge.svg)](https://github.com/GioiaZheng/CiboCompass/actions/workflows/govulncheck.yml)
+[![Secret scan](https://github.com/GioiaZheng/CiboCompass/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/GioiaZheng/CiboCompass/actions/workflows/secret-scan.yml)
+
 🚀 Full-stack mobile app for international students in Italy
 
 CiboCompass is a **full-stack mobile application** designed to help users understand restaurant menus and make informed food choices across cultures.
