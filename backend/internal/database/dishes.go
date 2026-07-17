@@ -234,18 +234,24 @@ ORDER BY d.name
 			logger.Printf("Error scanning dish: %v", err)
 			return nil, err
 		}
-
-		ingredients, err := getIngredientsForDish(db, logger, dish.Name)
-		if err != nil {
-			return nil, err
-		}
-		dish.Ingredients = ingredients
 		dishes = append(dishes, dish)
 	}
 
 	if err = rows.Err(); err != nil {
 		logger.Printf("Error iterating dish rows: %v", err)
 		return nil, err
+	}
+	if err = rows.Close(); err != nil {
+		logger.Printf("Error closing dish rows: %v", err)
+		return nil, err
+	}
+
+	for index := range dishes {
+		ingredients, err := getIngredientsForDish(db, logger, dishes[index].Name)
+		if err != nil {
+			return nil, err
+		}
+		dishes[index].Ingredients = ingredients
 	}
 
 	return dishes, nil
