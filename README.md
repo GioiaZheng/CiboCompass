@@ -132,8 +132,8 @@ Visual files are stored with explicit names:
 - Highlight vegetarian / gluten-free options  
 
 ### 💾 Offline Support
-- Ratings stored locally when offline  
-- Synced automatically when backend is available  
+- Ratings remain visible locally after a network failure  
+- Pending feedback is retried on app start, foreground, or later submissions  
 
 ---
 
