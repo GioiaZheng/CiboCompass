@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const babel = require('@babel/core');
 
-const files = ['App.js', 'index.js'];
+const files = ['App.js', 'index.js', 'src/config/api-base-url.js'];
 
 for (const file of files) {
   const fullPath = path.join(process.cwd(), file);

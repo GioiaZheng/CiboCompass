@@ -5,10 +5,11 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE_URL = 'http://192.168.1.5:4000/v1';
+const { resolveApiBaseUrl } = require('./src/config/api-base-url');
+
+const API_BASE_URL = resolveApiBaseUrl(process.env.EXPO_PUBLIC_API_BASE_URL);
 const PENDING_FEEDBACK_KEY = 'pendingRatingFeedback';
 let pendingFeedbackSyncing = false;
-// change 'http://YOUROWNIPADDRESS:4000/v1' as needed
 const NATIONALITIES = [
     { name: 'Italy', flag: '🇮🇹' },
     { name: 'France', flag: '🇫🇷' },
