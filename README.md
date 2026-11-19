@@ -166,6 +166,31 @@ git clone https://github.com/GioiaZheng/CiboCompass.git
 cd CiboCompass
 
 npm install
+npm run check
+```
+
+Create a local `.env` from `.env.example`, then set the backend address for the
+client you are running:
+
+| Client | `EXPO_PUBLIC_API_BASE_URL` |
+| --- | --- |
+| Web or iOS simulator | `http://localhost:4000/v1` |
+| Android emulator | `http://10.0.2.2:4000/v1` |
+| Physical device | `http://<development-machine-LAN-IP>:4000/v1` |
+
+For example:
+
+```dotenv
+EXPO_PUBLIC_API_BASE_URL=http://localhost:4000/v1
+```
+
+`EXPO_PUBLIC_` values are included in the client bundle, so this setting must
+contain an endpoint only, never credentials or secrets. Reload the app after
+changing it.
+
+Start Expo:
+
+```bash
 npm run start
 ```
 
